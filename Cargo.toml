@@ -14,3 +14,10 @@ pest = "2.6"
 pest_derive = "2.6"
 clap = { version = "4.3", features = ["derive"]}
 railroad = { version="0.3.2", features = [ "resvg" ]}
+
+[lib]
+name = "railroad_dsl"
+crate-type = ["cdylib", "rlib"]
+
+[build-dependencies]
+cbindgen = "0.29.0"

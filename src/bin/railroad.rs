@@ -3,6 +3,7 @@ use std::borrow;
 use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
+use railroad_dsl::compile;
 
 #[derive(Clone, clap::ValueEnum)]
 #[allow(clippy::upper_case_acronyms)]
@@ -97,7 +98,7 @@ fn dia_from_stdin(
 
     let mut buf = String::new();
     io::stdin().read_to_string(&mut buf)?;
-    let diagram = railroad_dsl::compile(&buf, css).map_err(|e| Box::new(e.with_path("<stdin>")))?;
+    let diagram = compile(&buf, css).map_err(|e| Box::new(e.with_path("<stdin>")))?;
     match format {
         Format::SVG => {
             println!("{}", diagram.diagram);

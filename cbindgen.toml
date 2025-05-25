@@ -1,0 +1,4 @@
+# cbindgen.toml
+language = "C"
+namespace = ""
+include_guard = "RAILROAD_DSL_H"

@@ -5,3 +5,4 @@ examples/example_diagrams_light.html
 examples/example_diagrams_dark.html
 examples/*.png
 examples/*.svg
+include/

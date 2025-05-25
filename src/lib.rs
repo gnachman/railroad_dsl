@@ -6,6 +6,9 @@ use pest::iterators::Pair;
 use pest::Parser;
 use railroad::svg;
 
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
+
 #[derive(Parser)]
 #[grammar = "parser.pest"]
 struct RRParser;
@@ -129,5 +132,44 @@ mod tests {
                 }
             }
         }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn railroad_dsl_to_svg(
+    input: *const c_char,
+    css:   *const c_char,
+) -> *mut c_char {
+    // Safety: caller must pass valid, NUL-terminated pointers
+    assert!(!input.is_null());
+    assert!(!css.is_null());
+
+    // DSL source -> &str
+    let c_input = unsafe { CStr::from_ptr(input) };
+    let src     = c_input.to_str().expect("invalid UTF-8 in DSL source");
+
+    // CSS source -> &str
+    let c_css = unsafe { CStr::from_ptr(css) };
+    let css_str = c_css.to_str().expect("invalid UTF-8 in CSS");
+
+    // Compile DSL and render
+    let diagram = compile(src, css_str)
+        .expect("compile failed")
+        .diagram; 
+    let svg = diagram.to_string();
+
+    // Return a C string -> caller must free
+    let c_string = CString::new(svg).expect("NUL byte in SVG data");
+    c_string.into_raw()
+}
+
+/// Free any string allocated by Rust (e.g. from dsl_to_svg)
+#[no_mangle]
+pub extern "C" fn railroad_string_free(s: *mut c_char) {
+    if s.is_null() {
+        return;
+    }
+    unsafe {
+        drop(CString::from_raw(s));
     }
 }
