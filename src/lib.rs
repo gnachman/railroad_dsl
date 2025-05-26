@@ -173,3 +173,48 @@ pub extern "C" fn railroad_string_free(s: *mut c_char) {
         drop(CString::from_raw(s));
     }
 }
+
+
+/// Return the default CSS for the given theme ("light" or "dark").
+///
+/// # Safety
+/// - `theme` must be a valid, NUL-terminated C string.
+/// - Returns a pointer into a freshly allocated `CString`; caller must free
+///   it via `CString::from_raw(...)`.
+#[no_mangle]
+pub extern "C" fn railroad_dsl_css_for_theme(theme: *const c_char) -> *mut c_char {
+    assert!(!theme.is_null());
+
+    // Convert input
+    let c_theme = unsafe { CStr::from_ptr(theme) };
+    let theme_str = c_theme.to_str().expect("invalid UTF-8 in theme");
+
+    // Pick Stylesheet variant
+    let sheet = match theme_str {
+        "light" => railroad::Stylesheet::Light,
+        "dark"  => railroad::Stylesheet::Dark,
+        _       => panic!("unknown theme: {}", theme_str),
+    };
+
+    // Extract &str CSS and hand off ownership to caller
+    let css = sheet.stylesheet();
+    let c_string = CString::new(css).expect("NUL byte in CSS data");
+    c_string.into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn railroad_dsl_is_valid(input: *const c_char) -> bool {
+    if input.is_null() {
+        return false;
+    }
+
+    let c_input = unsafe { CStr::from_ptr(input) };
+    let src = match c_input.to_str() {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+
+    compile(src, "") // empty CSS is fine for validation
+        .is_ok()
+}
+
